@@ -21,9 +21,7 @@ class Tesco(webdriver.Chrome):
         self.location_elements = []
         self.concessions_elements = []
         self.store_details = []
-        self.filepath = (
-            r"C:/Users/keita/OneDrive/Documents/projects/data/json/tesco.json"
-        )
+        self.filepath = const.DATA_FILEPATH
         # self.maximize_window()
 
     def land_first_page(self):
@@ -72,8 +70,8 @@ class Tesco(webdriver.Chrome):
                     ),
                 )
             )
-            # if i == 5:
-            #     break
+            if i == 5:
+                break
 
     def __get_details_store__(self, url):
         self.get(url)
@@ -115,6 +113,7 @@ class Tesco(webdriver.Chrome):
                 facilities=lst,
             )
         )
+        print(f"Store: {store_name_element.get_attribute('textContent')}")  # debug
         self.__has_concessions__(self.find_element(By.ID, "main"))
 
     def __parse_address__(self, address_element):
@@ -136,6 +135,7 @@ class Tesco(webdriver.Chrome):
                 element_items = element.find_elements(
                     By.CSS_SELECTOR, "div.MainServices-itemContent"
                 )
+                print(f"Concessions: {len(element_items)}")
                 for elem in element_items:
                     try:
                         self.concessions_elements.append(
@@ -143,9 +143,12 @@ class Tesco(webdriver.Chrome):
                                 "href"
                             )
                         )
+                        print(
+                            f"Concession: {elem.find_element(By.CSS_SELECTOR, 'a').get_attribute('href')}"
+                        )
                     except:
                         print(f"Error: {element_header.get_attribute('innerText')}")
-                    break
+
                 break
 
     def get_concession_details(self):

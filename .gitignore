@@ -6,3 +6,6 @@
 
 # Ignore vscode settings
 settings.json
+
+# Ignore the data folder
+data/
