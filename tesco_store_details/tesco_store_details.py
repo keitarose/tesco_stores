@@ -6,7 +6,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 import os
 import re
 import pprint
-from tesco_bot import constants as const
+from tesco_store_details import constants as const
 
 
 class Tesco(webdriver.Chrome):

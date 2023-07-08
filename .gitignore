@@ -1,2 +1,8 @@
 # Ignore Python bytecode
 *.pyc
+
+# Ignore the vscode folder
+.vscode/
+
+# Ignore vscode settings
+settings.json

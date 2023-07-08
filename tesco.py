@@ -1,4 +1,4 @@
-from tesco_bot.tesco import Tesco
+from tesco_store_details.tesco_store_details import Tesco
 import time
 
 with Tesco(teardown=True) as bot:
