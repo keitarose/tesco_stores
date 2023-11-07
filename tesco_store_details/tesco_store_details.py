@@ -143,6 +143,7 @@ class Tesco(webdriver.Chrome):
                             )
                         )
                     except:
+                        print(element_header.get_attribute("innerText"))
                         print(
                             f"Concession: {elem.find_element(By.TAG_NAME, 'h3').get_attribute('innerText')}"
                         )
