@@ -9,3 +9,12 @@ settings.json
 
 # Ignore the data folder
 data/
+
+# Ignore the web_scrape folder
+web_scrape/
+
+# Ignore Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Ignore Jupyter notebooks
+*.ipynb
