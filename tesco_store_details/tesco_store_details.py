@@ -25,6 +25,7 @@ class Tesco(uc.Chrome):
         self.location_elements = []
         self.concessions_elements = []
         self.store_details = []
+        self.request_count = 0
         self.store_filepath = const.STORE_DATA_FILEPATH
         self.location_filepath = const.LOCATION_DATA_FILEPATH
 
@@ -122,6 +123,11 @@ class Tesco(uc.Chrome):
             )
         )
         self.__has_concessions__(self.find_element(By.ID, "main"))
+        self.request_count += 1
+        if self.request_count % 100 == 0:
+            print(f"Request count: {self.request_count}")
+            with open(self.store_filepath, "w", encoding="utf-8") as file:
+                json.dump(self.store_details, file, ensure_ascii=False, indent=4)
         return 1
 
     def __parse_address__(self, address_element):
