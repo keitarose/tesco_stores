@@ -3,13 +3,15 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
+import undetected_chromedriver as uc
 import os
 import re
 import pprint
+import pandas as pd
 from tesco_store_details import constants as const
 
 
-class Tesco(webdriver.Chrome):
+class Tesco(uc.Chrome):
     def __init__(
         self,
         driver_path=r"C:/Users/keita/OneDrive/Documents/projects/selenium/chrome_driver",
@@ -23,12 +25,14 @@ class Tesco(webdriver.Chrome):
         self.location_elements = []
         self.concessions_elements = []
         self.store_details = []
-        self.filepath = const.DATA_FILEPATH
+        self.store_filepath = const.STORE_DATA_FILEPATH
+        self.location_filepath = const.LOCATION_DATA_FILEPATH
 
         # self.maximize_window()
 
     def land_first_page(self):
         self.get(const.START_URL)
+        self.__clear_cookies__()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.teardown:
@@ -43,16 +47,16 @@ class Tesco(webdriver.Chrome):
             )
             == "Accept all cookies"
         ):
-            cookie_buttons.find_element(By.TAG_NAME, "button").click()
+            cookie_buttons.find_element(By.TAG_NAME, "button").submit()
 
     def get_store_regions(self):
         pattern = re.compile("\d+")
-        if self.find_element(
-            By.CSS_SELECTOR, "div.CookieBanner-container"
-        ).is_displayed():
-            self.__clear_cookies__()
+        # if self.find_element(
+        #     By.CSS_SELECTOR, "div.CookieBanner-container"
+        # ).is_displayed():
+        #     self.__clear_cookies__()
 
-        directory_element = self.find_element(By.CSS_SELECTOR, "a.Locator-toDirectory")
+        directory_element = self.find_element(By.CSS_SELECTOR, "a.Locator-toDirectory")        
         directory_element.click()
         location_elements = self.find_elements(By.CSS_SELECTOR, "li.Directory-listItem")
         for i, location_element in enumerate(location_elements):
@@ -73,6 +77,9 @@ class Tesco(webdriver.Chrome):
                     ),
                 )
             )
+        print(self.location_elements)
+        with open(self.location_filepath, "w", encoding="utf-8") as file:
+            json.dump(self.location_elements, file, ensure_ascii=False, indent=4)
 
     def __get_details_store__(self, url):
         self.get(url)
@@ -115,6 +122,7 @@ class Tesco(webdriver.Chrome):
             )
         )
         self.__has_concessions__(self.find_element(By.ID, "main"))
+        return 1
 
     def __parse_address__(self, address_element):
         addr = []
@@ -160,6 +168,7 @@ class Tesco(webdriver.Chrome):
 
     def __get_details_stores__(self, url):
         self.get(url)
+        count = 0
         try:
             directory_content = self.find_element(
                 By.CSS_SELECTOR, "div.Directory-content"
@@ -177,11 +186,13 @@ class Tesco(webdriver.Chrome):
                         By.CSS_SELECTOR, "a[data-ya-track='link#']"
                     ).get_attribute("href")
                 )
+            
             for url in lst:
-                self.__get_details_store__(url)
+                count += self.__get_details_store__(url)
+        return count
 
-    def write_to_file(self):
-        with open(self.filepath, "w", encoding="utf-8") as file:
+    def write_to_file(self, ):
+        with open(self.store_filepath, "w", encoding="utf-8") as file:
             json.dump(self.store_details, file, ensure_ascii=False, indent=4)
 
     def location_list(self):
@@ -189,8 +200,11 @@ class Tesco(webdriver.Chrome):
         pp.pprint(self.store_details)
 
     def get_store_details(self):
-        for location_element in self.location_elements:
+        location_file = pd.read_json(self.location_filepath, orient="records")
+        location_elements = location_file["url"]
+        for location_element in location_elements:
             if location_element["count"] > 1:
-                self.__get_details_stores__(location_element["url"])
+                location_file["return_count"] = self.__get_details_stores__(location_element["url"])
             else:
-                self.__get_details_store__(location_element["url"])
+                location_file["return_count"] = self.__get_details_store__(location_element["url"])
+            location_file.to_json(self.location_filepath, orient="records", indent=4)
