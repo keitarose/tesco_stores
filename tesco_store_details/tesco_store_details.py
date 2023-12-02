@@ -8,6 +8,8 @@ import os
 import re
 import pprint
 import pandas as pd
+import random
+import time
 from tesco_store_details import constants as const
 
 
@@ -26,6 +28,7 @@ class Tesco(uc.Chrome):
         self.concessions_elements = []
         self.store_details = []
         self.request_count = 0
+        self.consession_count = 0
         self.store_filepath = const.STORE_DATA_FILEPATH
         self.location_filepath = const.LOCATION_DATA_FILEPATH
 
@@ -78,7 +81,8 @@ class Tesco(uc.Chrome):
                     ),
                 )
             )
-        print(self.location_elements)
+            # if i == 20:
+            #     break
         with open(self.location_filepath, "w", encoding="utf-8") as file:
             json.dump(self.location_elements, file, ensure_ascii=False, indent=4)
 
@@ -128,6 +132,8 @@ class Tesco(uc.Chrome):
             print(f"Request count: {self.request_count}")
             with open(self.store_filepath, "w", encoding="utf-8") as file:
                 json.dump(self.store_details, file, ensure_ascii=False, indent=4)
+
+            time.sleep(random.randint(5, 15))
         return 1
 
     def __parse_address__(self, address_element):
@@ -141,6 +147,8 @@ class Tesco(uc.Chrome):
         main_services_elements = element.find_elements(
             By.CSS_SELECTOR, "div.MainServices-wrapper"
         )
+        if len(main_services_elements)==0:
+            return
         for element in main_services_elements:
             element_header = element.find_element(
                 By.CSS_SELECTOR, "h2.MainServices-heading.Heading--sub"
@@ -206,11 +214,15 @@ class Tesco(uc.Chrome):
         pp.pprint(self.store_details)
 
     def get_store_details(self):
-        location_file = pd.read_json(self.location_filepath, orient="records")
-        location_elements = location_file["url"]
-        for location_element in location_elements:
+        location_df = pd.read_json(self.location_filepath, orient="records")
+        # location_elements = location_df["url"]
+        for i, location_element in location_df.copy().iterrows():
             if location_element["count"] > 1:
-                location_file["return_count"] = self.__get_details_stores__(location_element["url"])
+                location_df.loc[i, "return_count"] = self.__get_details_stores__(location_element["url"])
             else:
-                location_file["return_count"] = self.__get_details_store__(location_element["url"])
-            location_file.to_json(self.location_filepath, orient="records", indent=4)
+                location_df.loc[i, "return_count"] = self.__get_details_store__(location_element["url"])
+            location_df.to_json(self.location_filepath, orient="records", indent=4)
+        self.concession_count = len(self.concessions_elements)
+        with open(const.CONCESSION_DATA_FILEPATH, "w") as fp:
+            fp.write("\n".join(self.concessions_elements))
+
