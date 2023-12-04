@@ -160,7 +160,7 @@ class Tesco(uc.Chrome):
                 for elem in element_items:
                     try:
                         self.concessions_elements.append(
-                            elem.find_element(By.CSS_SELECTOR, "a").get_attribute(
+                            elem.find_element(By.CSS_SELECTOR, "a.MainServices-link Link--bodyText").get_attribute(
                                 "href"
                             )
                         )
