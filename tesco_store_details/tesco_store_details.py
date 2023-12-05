@@ -86,9 +86,10 @@ class Tesco(uc.Chrome):
         with open(self.location_filepath, "w", encoding="utf-8") as file:
             json.dump(self.location_elements, file, ensure_ascii=False, indent=4)
 
-    def __get_details_store__(self, url):
+    def __get_details_store__(self, url, restart=False):
         self.get(url)
         lst = []
+        mode = "w"
         store_name_element = self.find_element(By.ID, "location-name")
         address_element = self.find_element(By.ID, "address")
         store_parameters = self.find_element(
@@ -130,7 +131,9 @@ class Tesco(uc.Chrome):
         self.request_count += 1
         if self.request_count % 100 == 0:
             print(f"Request count: {self.request_count}")
-            with open(self.store_filepath, "w", encoding="utf-8") as file:
+            if restart:
+                mode = "a"
+            with open(self.store_filepath, mode, encoding="utf-8") as file:
                 json.dump(self.store_details, file, ensure_ascii=False, indent=4)
 
             time.sleep(random.randint(5, 15))
@@ -159,18 +162,25 @@ class Tesco(uc.Chrome):
                 )
                 for elem in element_items:
                     try:
-                        self.concessions_elements.append(
-                            elem.find_element(By.CSS_SELECTOR, "a.MainServices-link Link--bodyText").get_attribute(
-                                "href"
+                        if elem.find_element(By.TAG_NAME, "a").get_attribute(
+                            "innerText"
+                        ) == "Learn more":
+                            self.concessions_elements.append(
+                                elem.find_element(By.TAG, "a").get_attribute(
+                                    "href"
+                                )
                             )
-                        )
                     except:
                         print(element_header.get_attribute("innerText"))
                         print(
                             f"Concession: {elem.find_element(By.TAG_NAME, 'h3').get_attribute('innerText')}"
                         )
 
-    def get_concession_details(self):
+    def get_concession_details(self, from_file=False, start_at=0, restart=False):
+        if from_file:
+            with open(const.CONCESSION_DATA_FILEPATH, "r") as fp:
+                self.concessions_elements = fp.read().splitlines()[start_at:]
+
         if self.concessions_elements:
             for url in self.concessions_elements:
                 self.__get_details_store__(url)
@@ -216,7 +226,7 @@ class Tesco(uc.Chrome):
     def get_store_details(self):
         location_df = pd.read_json(self.location_filepath, orient="records")
         # location_elements = location_df["url"]
-        for i, location_element in location_df.copy().iterrows():
+        for _, location_element in location_df.copy().iterrows():
             if location_element["count"] > 1:
                 location_df.loc[i, "return_count"] = self.__get_details_stores__(location_element["url"])
             else:
